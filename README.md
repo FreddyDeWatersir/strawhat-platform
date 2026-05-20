@@ -15,6 +15,7 @@ One Piece TCG document hub with PDF upload, structured cost extraction, and RAG-
 - **Claude extraction** of supplier, date, amount, tracking, product set
 - **Dashboard** with totals by currency
 - **Cases** inventory: track each purchased case (12 boxes), mark boxes sold, see profit and break-even per case
+- **Sources** directory: map JP/IT sourcing channels (tiered), record price observations manually, compare latest prices across providers
 - **Chat** grounded in uploaded documents with filename citations
 
 ---
@@ -33,7 +34,7 @@ One Piece TCG document hub with PDF upload, structured cost extraction, and RAG-
 
 1. Create a new project at [supabase.com/dashboard](https://supabase.com/dashboard).
 2. **Database → Extensions** → enable **vector** (pgvector).
-3. Open **SQL Editor** → run [`supabase/migrations/001_initial.sql`](supabase/migrations/001_initial.sql), then [`supabase/migrations/002_pgvector.sql`](supabase/migrations/002_pgvector.sql), then [`supabase/migrations/003_cases.sql`](supabase/migrations/003_cases.sql).
+3. Open **SQL Editor** → run [`supabase/migrations/001_initial.sql`](supabase/migrations/001_initial.sql), then [`supabase/migrations/002_pgvector.sql`](supabase/migrations/002_pgvector.sql), then [`supabase/migrations/003_cases.sql`](supabase/migrations/003_cases.sql), then [`supabase/migrations/004_providers.sql`](supabase/migrations/004_providers.sql), then [`supabase/migrations/005_provider_resources.sql`](supabase/migrations/005_provider_resources.sql).
 4. **Storage** → Create bucket named `pdfs` → set **Private**.
 5. **Project Settings → API** — copy:
    - Project URL → `NEXT_PUBLIC_SUPABASE_URL`
@@ -122,12 +123,13 @@ Use Haiku for extraction and Sonnet for chat to balance cost vs quality. Monitor
 ```
 app/
   (auth)/login/          # Password login
-  (protected)/           # Dashboard, cases, documents, chat
+  (protected)/           # Dashboard, cases, sources, documents, chat
   api/                   # Upload, chat, transactions, auth
 lib/
   claude/                # Anthropic client + extraction
   pdf/                   # PDF text extraction (unpdf)
   cases/                 # Case P&L summaries
+  sources/               # Provider directory queries & formatting
   rag/                   # Chunking + hybrid search
   voyage/                # Voyage embedding client
   supabase/              # Service client + types
@@ -144,6 +146,8 @@ middleware.ts            # Password gate
 | `Storage upload failed` | Create private bucket `pdfs` in Supabase |
 | `relation "documents" does not exist` | Run `001_initial.sql` in SQL Editor |
 | `relation "cases" does not exist` | Run `003_cases.sql` in SQL Editor |
+| `relation "providers" does not exist` | Run `004_providers.sql` in SQL Editor |
+| `column providers.category_url does not exist` | Run `005_provider_resources.sql` in SQL Editor |
 | `function search_document_chunks_hybrid does not exist` | Enable **vector** extension, then run `002_pgvector.sql` |
 | `Missing VOYAGE_API_KEY` | Set env var on Vercel / `.env.local` |
 | `Missing ANTHROPIC_API_KEY` | Set env var on Vercel / `.env.local` |
@@ -163,8 +167,24 @@ npm run backfill:embeddings  # Embed existing chunks missing vectors (after migr
 
 ---
 
+## Sources (sourcing directory)
+
+After running `004_providers.sql` **and** `005_provider_resources.sql`, open **Sources** in the nav:
+
+1. Browse pre-seeded JP retailers, proxies, exporters, and Italian reseller placeholders. Each tier card explains *when* to use it.
+2. Click any provider → use **Browse OP sealed** (deep link to their One Piece TCG sealed category), **Auto-translate** (Google Translate wrapper), and **Quick search** (type a set code, opens that provider's search results).
+3. Read the **How to buy** panel on the detail page — payment quirks, shipping notes, JP keyword tips per provider.
+4. **Add price observation** while browsing (set code, price, status, product URL).
+5. **Compare prices** shows the latest observation per provider per set side-by-side, with a JPY→EUR hint.
+6. **JP cheatsheet** (`/sources/cheatsheet`): tier workflow guides, JP↔EN glossary (予約, 在庫あり, BOX/カートン, etc.), and trusted external resources (Bandai calendar, Wise card, Tenso forwarder).
+
+Phase 2 (not built yet): auto-scrape friendly JP sites + Discord alerts on restock/pre-order changes.
+
+---
+
 ## Phase 2 ideas
 
+- Provider watch: cron scrape + restock/pre-order alerts
 - OCR / Claude vision for scanned PDFs
 - Voyage reranker over hybrid results
 - Multi-user auth

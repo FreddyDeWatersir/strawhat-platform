@@ -4,6 +4,13 @@ import {
   aggregateInventory,
 } from "@/lib/cases/summary";
 import { formatMoney } from "@/lib/cases/format";
+import {
+  formatListingPrice,
+  formatObservedAge,
+  statusClass,
+  statusLabel,
+} from "@/lib/sources/format";
+import { recentListings } from "@/lib/sources/queries";
 import { createServiceClient, type CaseWithBoxes } from "@/lib/supabase/server";
 import Link from "next/link";
 
@@ -22,6 +29,8 @@ export default async function DashboardPage() {
   };
   let casesPnl: ReturnType<typeof aggregateCasesByCurrency> = [];
   let casesError: string | null = null;
+  let recentSourceListings: Awaited<ReturnType<typeof recentListings>> = [];
+  let sourcesError: string | null = null;
   let error: string | null = null;
 
   try {
@@ -45,6 +54,13 @@ export default async function DashboardPage() {
       const cases = (casesData ?? []) as CaseWithBoxes[];
       inventory = aggregateInventory(cases);
       casesPnl = aggregateCasesByCurrency(cases);
+    }
+
+    try {
+      recentSourceListings = await recentListings(3);
+    } catch (e) {
+      sourcesError =
+        e instanceof Error ? e.message : "Sources unavailable";
     }
   } catch (e) {
     error = e instanceof Error ? e.message : "Could not load dashboard";
@@ -161,6 +177,57 @@ export default async function DashboardPage() {
               </div>
             )}
           </>
+        )}
+      </div>
+
+      <div>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Latest sourcing observations</h2>
+          <Link href="/sources" className="text-sm text-gold hover:underline">
+            Sources →
+          </Link>
+        </div>
+        {sourcesError ? (
+          <p className="rounded-xl border border-card-border bg-card p-4 text-sm text-muted">
+            Sourcing directory unavailable. Run{" "}
+            <code className="text-xs">004_providers.sql</code> in Supabase.
+          </p>
+        ) : recentSourceListings.length === 0 ? (
+          <p className="rounded-xl border border-card-border bg-card p-4 text-sm text-muted">
+            No price observations yet.{" "}
+            <Link href="/sources" className="text-gold hover:underline">
+              Explore sources
+            </Link>{" "}
+            and record prices as you investigate JP retailers.
+          </p>
+        ) : (
+          <ul className="space-y-2 rounded-xl border border-card-border bg-card p-4">
+            {recentSourceListings.map((l) => (
+              <li
+                key={l.id}
+                className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm"
+              >
+                <Link
+                  href={`/sources/${l.provider_id}`}
+                  className="font-medium text-gold hover:underline"
+                >
+                  {l.providers?.name ?? "Provider"}
+                </Link>
+                <span>{l.set_code}</span>
+                <span className="text-muted">
+                  {formatListingPrice(l.price, l.currency)}
+                </span>
+                <span
+                  className={`rounded border px-1.5 py-0.5 text-xs ${statusClass(l.status)}`}
+                >
+                  {statusLabel(l.status)}
+                </span>
+                <span className="text-xs text-muted">
+                  {formatObservedAge(l.observed_at)}
+                </span>
+              </li>
+            ))}
+          </ul>
         )}
       </div>
 
