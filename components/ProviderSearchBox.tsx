@@ -9,17 +9,36 @@ type Mode = "case" | "box";
 
 export function ProviderSearchBox({
   template,
+  categoryUrl,
 }: {
   template: string | null;
+  categoryUrl: string | null;
 }) {
   const [query, setQuery] = useState("");
   const [mode, setMode] = useState<Mode>("case");
 
   if (!template) {
     return (
-      <p className="text-sm text-muted">
-        No search template configured. Add one via Edit to enable quick search.
-      </p>
+      <div className="space-y-2 text-sm">
+        <p className="text-muted">
+          No reliable in-site search for this provider. Open the category page
+          and use their own on-site search bar from there.
+        </p>
+        {categoryUrl ? (
+          <a
+            href={categoryUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"
+          >
+            Browse OP TCG hub →
+          </a>
+        ) : (
+          <p className="text-xs text-muted">
+            Set a category URL via <span className="text-foreground">Edit</span>.
+          </p>
+        )}
+      </div>
     );
   }
 

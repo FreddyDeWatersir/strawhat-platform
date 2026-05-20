@@ -107,7 +107,10 @@ export default async function ProviderDetailPage({
 
       <div className="space-y-3 rounded-xl border border-card-border bg-card p-4">
         <h2 className="text-lg font-semibold">Quick search on this provider</h2>
-        <ProviderSearchBox template={provider.search_url_template} />
+        <ProviderSearchBox
+          template={provider.search_url_template}
+          categoryUrl={provider.category_url}
+        />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">

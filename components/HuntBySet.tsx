@@ -16,8 +16,6 @@ export function HuntBySet({ providers }: { providers: ProviderRow[] }) {
   const suffix = mode === "case" ? "カートン" : "BOX";
   const fullQuery = `${set} ${suffix}`;
 
-  const usable = providers.filter((p) => Boolean(p.search_url_template));
-
   return (
     <div className="space-y-4 rounded-xl border border-card-border bg-card p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -69,40 +67,56 @@ export function HuntBySet({ providers }: { providers: ProviderRow[] }) {
         ))}
       </div>
 
-      {usable.length === 0 ? (
-        <p className="text-sm text-muted">
-          No providers have search templates configured yet. Run migration{" "}
-          <code className="text-xs">006_search_box_tweaks.sql</code>.
-        </p>
-      ) : (
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {usable.map((p) => {
-            const url = buildSearchUrl(p.search_url_template, fullQuery);
-            return (
-              <a
-                key={p.id}
-                href={url ?? "#"}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => {
-                  if (!url) e.preventDefault();
-                }}
-                className="flex items-start justify-between gap-2 rounded-lg border border-card-border bg-background px-3 py-2 text-sm hover:border-gold"
-              >
-                <div className="min-w-0">
-                  <p className="truncate font-medium text-gold">{p.name}</p>
-                  <p className="text-xs text-muted">{tierShort(p.tier)}</p>
-                </div>
-                <span className="text-xs text-muted">Open →</span>
-              </a>
-            );
-          })}
-        </div>
-      )}
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        {providers.map((p) => {
+          const searchUrl = p.search_url_template
+            ? buildSearchUrl(p.search_url_template, fullQuery)
+            : null;
+          const url = searchUrl ?? p.category_url ?? p.url;
+          const mode = searchUrl
+            ? "search"
+            : p.category_url
+              ? "browse"
+              : p.url
+                ? "open"
+                : "missing";
+          return (
+            <a
+              key={p.id}
+              href={url ?? "#"}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => {
+                if (!url) e.preventDefault();
+              }}
+              className={`flex items-start justify-between gap-2 rounded-lg border border-card-border bg-background px-3 py-2 text-sm ${
+                url ? "hover:border-gold" : "opacity-60"
+              }`}
+            >
+              <div className="min-w-0">
+                <p className="truncate font-medium text-gold">{p.name}</p>
+                <p className="text-xs text-muted">{tierShort(p.tier)}</p>
+              </div>
+              <span className="whitespace-nowrap text-xs text-muted">
+                {mode === "search"
+                  ? `Search ${set} →`
+                  : mode === "browse"
+                    ? "Browse →"
+                    : mode === "open"
+                      ? "Open →"
+                      : "—"}
+              </span>
+            </a>
+          );
+        })}
+      </div>
 
       <p className="text-xs text-muted">
-        Tip: open 3–4 providers from different tiers, note prices on each, then
-        log them as observations on the provider page.
+        <span className="text-foreground">Search</span> opens a pre-filtered{" "}
+        {mode === "case" ? "case" : "BOX"} search.{" "}
+        <span className="text-foreground">Browse</span> opens that provider&apos;s
+        OP TCG hub (use their on-site search). Open 3–4 across tiers, log prices
+        on each provider page.
       </p>
     </div>
   );
