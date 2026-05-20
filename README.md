@@ -14,6 +14,7 @@ One Piece TCG document hub with PDF upload, structured cost extraction, and RAG-
 - **Hybrid search** (Postgres FTS + semantic embeddings) for chat retrieval
 - **Claude extraction** of supplier, date, amount, tracking, product set
 - **Dashboard** with totals by currency
+- **Cases** inventory: track each purchased case (12 boxes), mark boxes sold, see profit and break-even per case
 - **Chat** grounded in uploaded documents with filename citations
 
 ---
@@ -32,7 +33,7 @@ One Piece TCG document hub with PDF upload, structured cost extraction, and RAG-
 
 1. Create a new project at [supabase.com/dashboard](https://supabase.com/dashboard).
 2. **Database → Extensions** → enable **vector** (pgvector).
-3. Open **SQL Editor** → run [`supabase/migrations/001_initial.sql`](supabase/migrations/001_initial.sql), then [`supabase/migrations/002_pgvector.sql`](supabase/migrations/002_pgvector.sql).
+3. Open **SQL Editor** → run [`supabase/migrations/001_initial.sql`](supabase/migrations/001_initial.sql), then [`supabase/migrations/002_pgvector.sql`](supabase/migrations/002_pgvector.sql), then [`supabase/migrations/003_cases.sql`](supabase/migrations/003_cases.sql).
 4. **Storage** → Create bucket named `pdfs` → set **Private**.
 5. **Project Settings → API** — copy:
    - Project URL → `NEXT_PUBLIC_SUPABASE_URL`
@@ -121,11 +122,12 @@ Use Haiku for extraction and Sonnet for chat to balance cost vs quality. Monitor
 ```
 app/
   (auth)/login/          # Password login
-  (protected)/           # Dashboard, documents, chat
+  (protected)/           # Dashboard, cases, documents, chat
   api/                   # Upload, chat, transactions, auth
 lib/
   claude/                # Anthropic client + extraction
   pdf/                   # PDF text extraction (unpdf)
+  cases/                 # Case P&L summaries
   rag/                   # Chunking + hybrid search
   voyage/                # Voyage embedding client
   supabase/              # Service client + types
@@ -141,6 +143,7 @@ middleware.ts            # Password gate
 |-------|-----|
 | `Storage upload failed` | Create private bucket `pdfs` in Supabase |
 | `relation "documents" does not exist` | Run `001_initial.sql` in SQL Editor |
+| `relation "cases" does not exist` | Run `003_cases.sql` in SQL Editor |
 | `function search_document_chunks_hybrid does not exist` | Enable **vector** extension, then run `002_pgvector.sql` |
 | `Missing VOYAGE_API_KEY` | Set env var on Vercel / `.env.local` |
 | `Missing ANTHROPIC_API_KEY` | Set env var on Vercel / `.env.local` |

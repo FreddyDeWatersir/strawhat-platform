@@ -1,5 +1,10 @@
 import { TransactionsTable } from "@/components/TransactionsTable";
-import { createServiceClient } from "@/lib/supabase/server";
+import {
+  aggregateCasesByCurrency,
+  aggregateInventory,
+} from "@/lib/cases/summary";
+import { formatMoney } from "@/lib/cases/format";
+import { createServiceClient, type CaseWithBoxes } from "@/lib/supabase/server";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -9,6 +14,14 @@ export default async function DashboardPage() {
     ReturnType<typeof fetchTransactions>
   > = [];
   let stats = { total: 0, readyDocs: 0, failedDocs: 0 };
+  let inventory = {
+    totalCases: 0,
+    totalBoxes: 0,
+    soldBoxes: 0,
+    availableBoxes: 0,
+  };
+  let casesPnl: ReturnType<typeof aggregateCasesByCurrency> = [];
+  let casesError: string | null = null;
   let error: string | null = null;
 
   try {
@@ -21,6 +34,18 @@ export default async function DashboardPage() {
       readyDocs: list.filter((d) => d.status === "ready").length,
       failedDocs: list.filter((d) => d.status === "failed").length,
     };
+
+    const { data: casesData, error: casesDbError } = await supabase
+      .from("cases")
+      .select("*, case_boxes(*)");
+
+    if (casesDbError) {
+      casesError = casesDbError.message;
+    } else {
+      const cases = (casesData ?? []) as CaseWithBoxes[];
+      inventory = aggregateInventory(cases);
+      casesPnl = aggregateCasesByCurrency(cases);
+    }
   } catch (e) {
     error = e instanceof Error ? e.message : "Could not load dashboard";
   }
@@ -55,7 +80,9 @@ export default async function DashboardPage() {
 
       {Object.keys(byCurrency).length > 0 && (
         <div className="rounded-xl border border-card-border bg-card p-4">
-          <h2 className="mb-2 text-sm font-medium text-muted">Totals by currency</h2>
+          <h2 className="mb-2 text-sm font-medium text-muted">
+            Invoice totals by currency
+          </h2>
           <ul className="flex flex-wrap gap-4">
             {Object.entries(byCurrency).map(([currency, sum]) => (
               <li key={currency} className="text-lg font-semibold">
@@ -68,6 +95,74 @@ export default async function DashboardPage() {
           </ul>
         </div>
       )}
+
+      <div>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Case inventory</h2>
+          <Link href="/cases" className="text-sm text-gold hover:underline">
+            Manage cases →
+          </Link>
+        </div>
+        {casesError ? (
+          <p className="rounded-xl border border-card-border bg-card p-4 text-sm text-muted">
+            Case inventory unavailable. Run{" "}
+            <code className="text-xs">003_cases.sql</code> in Supabase.
+          </p>
+        ) : (
+          <>
+            <div className="grid gap-4 sm:grid-cols-4">
+              <StatCard label="Cases" value={String(inventory.totalCases)} />
+              <StatCard label="Total boxes" value={String(inventory.totalBoxes)} />
+              <StatCard label="Sold boxes" value={String(inventory.soldBoxes)} />
+              <StatCard
+                label="Available boxes"
+                value={String(inventory.availableBoxes)}
+              />
+            </div>
+            {casesPnl.length > 0 && (
+              <div className="mt-4 space-y-3">
+                <h3 className="text-sm font-medium text-muted">
+                  Cases P&L by currency
+                </h3>
+                {casesPnl.map((row) => (
+                  <div
+                    key={row.currency}
+                    className="rounded-xl border border-card-border bg-card p-4"
+                  >
+                    <p className="mb-2 font-semibold text-gold">{row.currency}</p>
+                    <ul className="grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-4">
+                      <li>
+                        <span className="text-muted">Total made: </span>
+                        {formatMoney(row.totalMade, row.currency)}
+                      </li>
+                      <li>
+                        <span className="text-muted">Total cost: </span>
+                        {formatMoney(row.totalCost, row.currency)}
+                      </li>
+                      <li>
+                        <span className="text-muted">Net profit: </span>
+                        <span
+                          className={
+                            row.netProfit >= 0
+                              ? "text-emerald-400"
+                              : "text-red-400"
+                          }
+                        >
+                          {formatMoney(row.netProfit, row.currency)}
+                        </span>
+                      </li>
+                      <li>
+                        <span className="text-muted">Still to break even: </span>
+                        {formatMoney(row.breakEvenRemaining, row.currency)}
+                      </li>
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </div>
 
       <div>
         <div className="mb-3 flex items-center justify-between">

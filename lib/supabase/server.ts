@@ -34,6 +34,32 @@ export type ChunkSearchResult = {
   rank: number;
 };
 
+export type CaseRow = {
+  id: string;
+  label: string;
+  product_set: string | null;
+  box_count: number;
+  purchase_currency: string | null;
+  purchase_price: number | null;
+  purchased_at: string | null;
+  document_id: string | null;
+  transaction_id: string | null;
+  notes: string | null;
+  created_at: string;
+};
+
+export type CaseBoxRow = {
+  id: string;
+  case_id: string;
+  box_number: number;
+  sold_at: string | null;
+  sale_price: number | null;
+  sale_currency: string | null;
+  notes: string | null;
+};
+
+export type CaseWithBoxes = CaseRow & { case_boxes: CaseBoxRow[] };
+
 export function createServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
