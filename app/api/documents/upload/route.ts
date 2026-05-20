@@ -4,6 +4,7 @@ import { extractTransactionFromText } from "@/lib/claude/extract";
 import { extractPdfText } from "@/lib/pdf/extract";
 import { chunkText } from "@/lib/rag/chunk";
 import { createServiceClient } from "@/lib/supabase/server";
+import { embedDocument } from "@/lib/voyage/client";
 
 const MAX_BYTES = 20 * 1024 * 1024;
 
@@ -98,10 +99,46 @@ export async function POST(request: Request) {
     }
 
     const chunks = chunkText(fullText);
+
+    let embeddings: number[][];
+    try {
+      embeddings = await embedDocument(chunks);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Embedding generation failed";
+      await supabase
+        .from("documents")
+        .update({
+          status: "failed",
+          error_message: message,
+        })
+        .eq("id", docId);
+      return NextResponse.json(
+        { error: message, documentId: docId },
+        { status: 500 },
+      );
+    }
+
+    if (embeddings.length !== chunks.length) {
+      const message = "Embedding count does not match chunk count";
+      await supabase
+        .from("documents")
+        .update({
+          status: "failed",
+          error_message: message,
+        })
+        .eq("id", docId);
+      return NextResponse.json(
+        { error: message, documentId: docId },
+        { status: 500 },
+      );
+    }
+
     const chunkRows = chunks.map((content, chunk_index) => ({
       document_id: docId,
       chunk_index,
       content,
+      embedding: embeddings[chunk_index],
     }));
 
     const { error: chunksError } = await supabase

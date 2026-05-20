@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "diagnose:chat": "node scripts/diagnose-chat-data.mjs",
-    "diagnose:chat:reproduce": "node scripts/diagnose-chat-reproduce.mjs"
+    "diagnose:chat:reproduce": "node scripts/diagnose-chat-reproduce.mjs",
+    "backfill:embeddings": "node scripts/backfill-embeddings.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
@@ -17,7 +18,8 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "unpdf": "^0.12.1",
-    "uuid": "^11.1.0"
+    "uuid": "^11.1.0",
+    "voyageai": "^0.2.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",

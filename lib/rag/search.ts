@@ -2,15 +2,18 @@ import {
   type ChunkSearchResult,
   createServiceClient,
 } from "@/lib/supabase/server";
+import { embedQuery, embeddingToPgvector } from "@/lib/voyage/client";
 
 export async function searchChunks(
   query: string,
   matchCount = 8,
 ): Promise<ChunkSearchResult[]> {
   const supabase = createServiceClient();
+  const queryEmbedding = await embedQuery(query);
 
-  const { data, error } = await supabase.rpc("search_document_chunks", {
+  const { data, error } = await supabase.rpc("search_document_chunks_hybrid", {
     search_query: query,
+    query_embedding: embeddingToPgvector(queryEmbedding),
     match_count: matchCount,
   });
 
