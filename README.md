@@ -163,6 +163,7 @@ middleware.ts            # Password gate
 npm run diagnose:chat          # Supabase: doc status, chunk count, FTS hit tests
 npm run diagnose:chat:reproduce # Login + one chat call; prints outcome A–D
 npm run backfill:embeddings  # Embed existing chunks missing vectors (after migration 002)
+npm run verify:migrations    # Confirm migrations 001–008 applied in Supabase
 ```
 
 ---
