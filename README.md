@@ -186,6 +186,8 @@ Phase 2 (not built yet): auto-scrape friendly JP sites + Discord alerts on resto
 
 ## Phase 2 ideas
 
+See [`docs/HANDOFF.md`](docs/HANDOFF.md) for a detailed handoff to the next agent on where Sources should go next (scraping strategy, what NOT to do, open questions).
+
 - Provider watch: cron scrape + restock/pre-order alerts
 - OCR / Claude vision for scanned PDFs
 - Voyage reranker over hybrid results
