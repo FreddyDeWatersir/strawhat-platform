@@ -34,7 +34,7 @@ One Piece TCG document hub with PDF upload, structured cost extraction, and RAG-
 
 1. Create a new project at [supabase.com/dashboard](https://supabase.com/dashboard).
 2. **Database → Extensions** → enable **vector** (pgvector).
-3. Open **SQL Editor** → run [`supabase/migrations/001_initial.sql`](supabase/migrations/001_initial.sql), then [`supabase/migrations/002_pgvector.sql`](supabase/migrations/002_pgvector.sql), then [`supabase/migrations/003_cases.sql`](supabase/migrations/003_cases.sql), then [`supabase/migrations/004_providers.sql`](supabase/migrations/004_providers.sql), then [`supabase/migrations/005_provider_resources.sql`](supabase/migrations/005_provider_resources.sql).
+3. Open **SQL Editor** → run [`supabase/migrations/001_initial.sql`](supabase/migrations/001_initial.sql), then [`supabase/migrations/002_pgvector.sql`](supabase/migrations/002_pgvector.sql), then [`supabase/migrations/003_cases.sql`](supabase/migrations/003_cases.sql), then [`supabase/migrations/004_providers.sql`](supabase/migrations/004_providers.sql), then [`supabase/migrations/005_provider_resources.sql`](supabase/migrations/005_provider_resources.sql), then [`supabase/migrations/006_search_box_tweaks.sql`](supabase/migrations/006_search_box_tweaks.sql).
 4. **Storage** → Create bucket named `pdfs` → set **Private**.
 5. **Project Settings → API** — copy:
    - Project URL → `NEXT_PUBLIC_SUPABASE_URL`
@@ -169,10 +169,11 @@ npm run backfill:embeddings  # Embed existing chunks missing vectors (after migr
 
 ## Sources (sourcing directory)
 
-After running `004_providers.sql` **and** `005_provider_resources.sql`, open **Sources** in the nav:
+After running `004_providers.sql`, `005_provider_resources.sql`, and `006_search_box_tweaks.sql`, open **Sources** in the nav:
 
-1. Browse pre-seeded JP retailers, proxies, exporters, and Italian reseller placeholders. Each tier card explains *when* to use it.
-2. Click any provider → use **Browse OP sealed** (deep link to their One Piece TCG sealed category), **Auto-translate** (Google Translate wrapper), and **Quick search** (type a set code, opens that provider's search results).
+1. Use the top **Hunt by set** panel: pick OP-15/OP-16/etc., choose Single BOX or Case (カートン), and click any provider to open a pre-built JP-keyword search in a new tab.
+2. Browse pre-seeded JP retailers, proxies, exporters, and Italian reseller placeholders. Each tier card explains *when* to use it.
+3. Click any provider → use **Browse OP sealed** (deep link to their One Piece TCG sealed category), **Auto-translate** (Google Translate wrapper), and **Quick search** chips (one-click open to that provider's search).
 3. Read the **How to buy** panel on the detail page — payment quirks, shipping notes, JP keyword tips per provider.
 4. **Add price observation** while browsing (set code, price, status, product URL).
 5. **Compare prices** shows the latest observation per provider per set side-by-side, with a JPY→EUR hint.

@@ -5,12 +5,15 @@ import { buildSearchUrl } from "@/lib/sources/resources";
 
 const SET_SUGGESTIONS = ["OP-16", "OP-15", "OP-14", "EB-02", "PRB-02"];
 
+type Mode = "box" | "case" | "raw";
+
 export function ProviderSearchBox({
   template,
 }: {
   template: string | null;
 }) {
   const [query, setQuery] = useState("");
+  const [mode, setMode] = useState<Mode>("box");
 
   if (!template) {
     return (
@@ -20,27 +23,67 @@ export function ProviderSearchBox({
     );
   }
 
-  const url = buildSearchUrl(template, query);
+  function fullQuery(base: string): string {
+    const trimmed = base.trim();
+    if (!trimmed) return "";
+    if (mode === "box") return `${trimmed} BOX`;
+    if (mode === "case") return `${trimmed} カートン`;
+    return trimmed;
+  }
+
+  const url = buildSearchUrl(template, fullQuery(query));
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap gap-2">
-        {SET_SUGGESTIONS.map((s) => (
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        <span className="text-muted">Looking for:</span>
+        {(["box", "case", "raw"] as const).map((m) => (
           <button
-            key={s}
+            key={m}
             type="button"
-            onClick={() => setQuery(s)}
-            className="rounded-lg border border-card-border px-2.5 py-1 text-xs text-muted hover:text-foreground"
+            onClick={() => setMode(m)}
+            className={`rounded-lg border px-2.5 py-1 ${
+              mode === m
+                ? "border-gold text-gold"
+                : "border-card-border text-muted hover:text-foreground"
+            }`}
           >
-            {s}
+            {m === "box"
+              ? "Single BOX (24 packs)"
+              : m === "case"
+                ? "Case / カートン (12 boxes)"
+                : "Raw query"}
           </button>
         ))}
       </div>
+
+      <div className="flex flex-wrap gap-2">
+        <span className="self-center text-xs text-muted">One-click search:</span>
+        {SET_SUGGESTIONS.map((s) => {
+          const directUrl = buildSearchUrl(template, fullQuery(s));
+          return (
+            <a
+              key={s}
+              href={directUrl ?? "#"}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => {
+                if (!directUrl) e.preventDefault();
+                setQuery(s);
+              }}
+              className="rounded-lg border border-card-border bg-background px-2.5 py-1 text-xs text-gold hover:border-gold"
+            >
+              {s} →
+            </a>
+          );
+        })}
+      </div>
+
       <div className="flex flex-wrap gap-2">
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Set code or JP keyword"
+          placeholder="Custom search (set code or JP keyword)"
           className="flex-1 rounded-lg border border-card-border bg-background px-3 py-2 text-sm"
         />
         <a
@@ -59,9 +102,10 @@ export function ProviderSearchBox({
           Search →
         </a>
       </div>
+
       {url && (
         <p className="truncate text-xs text-muted">
-          Opens: <span className="text-foreground">{url}</span>
+          Will open: <span className="text-foreground">{url}</span>
         </p>
       )}
     </div>

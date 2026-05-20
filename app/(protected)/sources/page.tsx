@@ -1,3 +1,4 @@
+import { HuntBySet } from "@/components/HuntBySet";
 import {
   groupProvidersByTier,
   latestListingsForProvider,
@@ -72,6 +73,8 @@ export default async function SourcesPage() {
           </Link>
         </div>
       </div>
+
+      <HuntBySet providers={providers} />
 
       <div className="rounded-xl border border-card-border bg-card p-4 text-sm">
         <p className="font-medium text-gold">New to JP sourcing?</p>
