@@ -7,13 +7,13 @@ import { tierShort } from "@/lib/sources/format";
 
 const SETS = ["OP-16", "OP-15", "OP-14", "OP-13", "EB-02", "PRB-02"];
 
-type Mode = "box" | "case";
+type Mode = "case" | "box";
 
 export function HuntBySet({ providers }: { providers: ProviderRow[] }) {
   const [set, setSet] = useState("OP-16");
-  const [mode, setMode] = useState<Mode>("box");
+  const [mode, setMode] = useState<Mode>("case");
 
-  const suffix = mode === "box" ? "BOX" : "カートン";
+  const suffix = mode === "case" ? "カートン" : "BOX";
   const fullQuery = `${set} ${suffix}`;
 
   const usable = providers.filter((p) => Boolean(p.search_url_template));
@@ -22,12 +22,15 @@ export function HuntBySet({ providers }: { providers: ProviderRow[] }) {
     <div className="space-y-4 rounded-xl border border-card-border bg-card p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold text-gold">Hunt by set</h2>
+          <h2 className="text-lg font-semibold text-gold">
+            Find sealed boxes &amp; cases
+          </h2>
           <p className="text-sm text-muted">
-            Pick a set + sealed format. Click any provider to open a pre-built
-            search in a new tab. JP retailers receive the JP keyword
-            <span className="text-foreground"> ワンピースカードゲーム</span>
-            {" "}automatically.
+            Pick a set + format. Click any provider to open a pre-built JP search
+            in a new tab. Searches are scoped to{" "}
+            <span className="text-foreground">ワンピースカードゲーム</span> +{" "}
+            <span className="text-foreground">未開封</span>{" "}
+            (sealed) — singles and used product are filtered out.
           </p>
         </div>
       </div>
@@ -50,7 +53,7 @@ export function HuntBySet({ providers }: { providers: ProviderRow[] }) {
       </div>
 
       <div className="flex flex-wrap gap-2 text-xs">
-        {(["box", "case"] as const).map((m) => (
+        {(["case", "box"] as const).map((m) => (
           <button
             key={m}
             type="button"
@@ -61,7 +64,7 @@ export function HuntBySet({ providers }: { providers: ProviderRow[] }) {
                 : "border-card-border text-muted hover:text-foreground"
             }`}
           >
-            {m === "box" ? "Single BOX (24 packs)" : "Case / カートン (12 boxes)"}
+            {m === "case" ? "Case / カートン (12 boxes)" : "Single BOX (24 packs)"}
           </button>
         ))}
       </div>

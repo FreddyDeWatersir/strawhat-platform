@@ -5,7 +5,7 @@ import { buildSearchUrl } from "@/lib/sources/resources";
 
 const SET_SUGGESTIONS = ["OP-16", "OP-15", "OP-14", "EB-02", "PRB-02"];
 
-type Mode = "box" | "case" | "raw";
+type Mode = "case" | "box";
 
 export function ProviderSearchBox({
   template,
@@ -13,7 +13,7 @@ export function ProviderSearchBox({
   template: string | null;
 }) {
   const [query, setQuery] = useState("");
-  const [mode, setMode] = useState<Mode>("box");
+  const [mode, setMode] = useState<Mode>("case");
 
   if (!template) {
     return (
@@ -26,18 +26,22 @@ export function ProviderSearchBox({
   function fullQuery(base: string): string {
     const trimmed = base.trim();
     if (!trimmed) return "";
-    if (mode === "box") return `${trimmed} BOX`;
     if (mode === "case") return `${trimmed} カートン`;
-    return trimmed;
+    return `${trimmed} BOX`;
   }
 
   const url = buildSearchUrl(template, fullQuery(query));
 
   return (
     <div className="space-y-3">
+      <p className="text-xs text-muted">
+        Sealed boxes and cases only — singles are filtered out via{" "}
+        <span className="text-foreground">未開封</span>
+        {" "}+ category pinning.
+      </p>
       <div className="flex flex-wrap items-center gap-2 text-xs">
-        <span className="text-muted">Looking for:</span>
-        {(["box", "case", "raw"] as const).map((m) => (
+        <span className="text-muted">I want:</span>
+        {(["case", "box"] as const).map((m) => (
           <button
             key={m}
             type="button"
@@ -48,11 +52,9 @@ export function ProviderSearchBox({
                 : "border-card-border text-muted hover:text-foreground"
             }`}
           >
-            {m === "box"
-              ? "Single BOX (24 packs)"
-              : m === "case"
-                ? "Case / カートン (12 boxes)"
-                : "Raw query"}
+            {m === "case"
+              ? "Case / カートン (12 boxes)"
+              : "Single BOX (24 packs)"}
           </button>
         ))}
       </div>

@@ -48,8 +48,9 @@ export default async function SourcesPage() {
         <div>
           <h1 className="text-2xl font-semibold text-gold">Sources</h1>
           <p className="text-sm text-muted">
-            Map Japanese OP TCG sourcing channels. Record prices as you
-            investigate — compare later on the Compare view.
+            Find sealed OP TCG <span className="text-foreground">boxes &amp; cases</span>{" "}
+            on Japanese channels. Searches are pre-filtered to sealed product —
+            no singles or graded cards.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

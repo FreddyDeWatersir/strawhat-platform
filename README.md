@@ -34,7 +34,7 @@ One Piece TCG document hub with PDF upload, structured cost extraction, and RAG-
 
 1. Create a new project at [supabase.com/dashboard](https://supabase.com/dashboard).
 2. **Database → Extensions** → enable **vector** (pgvector).
-3. Open **SQL Editor** → run [`supabase/migrations/001_initial.sql`](supabase/migrations/001_initial.sql), then [`supabase/migrations/002_pgvector.sql`](supabase/migrations/002_pgvector.sql), then [`supabase/migrations/003_cases.sql`](supabase/migrations/003_cases.sql), then [`supabase/migrations/004_providers.sql`](supabase/migrations/004_providers.sql), then [`supabase/migrations/005_provider_resources.sql`](supabase/migrations/005_provider_resources.sql), then [`supabase/migrations/006_search_box_tweaks.sql`](supabase/migrations/006_search_box_tweaks.sql).
+3. Open **SQL Editor** → run [`supabase/migrations/001_initial.sql`](supabase/migrations/001_initial.sql), then [`supabase/migrations/002_pgvector.sql`](supabase/migrations/002_pgvector.sql), then [`supabase/migrations/003_cases.sql`](supabase/migrations/003_cases.sql), then [`supabase/migrations/004_providers.sql`](supabase/migrations/004_providers.sql), then [`supabase/migrations/005_provider_resources.sql`](supabase/migrations/005_provider_resources.sql), then [`supabase/migrations/006_search_box_tweaks.sql`](supabase/migrations/006_search_box_tweaks.sql), then [`supabase/migrations/007_sealed_only_filters.sql`](supabase/migrations/007_sealed_only_filters.sql).
 4. **Storage** → Create bucket named `pdfs` → set **Private**.
 5. **Project Settings → API** — copy:
    - Project URL → `NEXT_PUBLIC_SUPABASE_URL`

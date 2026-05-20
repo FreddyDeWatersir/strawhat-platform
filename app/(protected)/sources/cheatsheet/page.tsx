@@ -17,8 +17,10 @@ export default function CheatsheetPage() {
         </Link>
         <h1 className="mt-2 text-2xl font-semibold text-gold">JP sourcing cheatsheet</h1>
         <p className="text-sm text-muted">
-          The minimum survival kit for buying One Piece TCG sealed product from
-          Japan when you can&apos;t read Japanese.
+          The minimum survival kit for buying One Piece TCG{" "}
+          <span className="text-foreground">sealed boxes &amp; cases</span> from
+          Japan when you can&apos;t read Japanese. Singles are out of scope for
+          now — every search in this app filters to sealed product.
         </p>
       </div>
 
@@ -116,9 +118,10 @@ export default function CheatsheetPage() {
         <h2 className="text-lg font-semibold">Suggested first session</h2>
         <ol className="ml-5 list-decimal space-y-1 text-sm text-muted">
           <li>
-            Open <Link href="/sources" className="text-gold hover:underline">/sources</Link>{" "}
-            and skim Tier 4 first (English-speaking exporters) to anchor a
-            ceiling price for the set you want.
+            On <Link href="/sources" className="text-gold hover:underline">/sources</Link>,
+            use the <span className="text-foreground">Find sealed boxes &amp; cases</span>{" "}
+            panel: pick the set, choose Case (カートン), then click 2–3 Tier 4
+            exporters to anchor your ceiling price.
           </li>
           <li>
             For the same set, hit Tier 1 (Surugaya, Yuyu-tei) via their{" "}
