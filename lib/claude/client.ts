@@ -16,11 +16,9 @@ export function getAnthropicClient(): Anthropic {
 }
 
 export function getExtractModel(): string {
-  return (
-    process.env.ANTHROPIC_MODEL_EXTRACT ?? "claude-3-5-haiku-20241022"
-  );
+  return process.env.ANTHROPIC_MODEL_EXTRACT ?? "claude-haiku-4-5";
 }
 
 export function getChatModel(): string {
-  return process.env.ANTHROPIC_MODEL_CHAT ?? "claude-sonnet-4-20250514";
+  return process.env.ANTHROPIC_MODEL_CHAT ?? "claude-sonnet-4-6";
 }

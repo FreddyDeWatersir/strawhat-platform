@@ -88,8 +88,8 @@ Share the Vercel URL and `SITE_PASSWORD` with your friend.
 | `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase anon key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Yes | Supabase service role (server only) |
-| `ANTHROPIC_MODEL_EXTRACT` | No | Default: `claude-3-5-haiku-20241022` |
-| `ANTHROPIC_MODEL_CHAT` | No | Default: `claude-sonnet-4-20250514` |
+| `ANTHROPIC_MODEL_EXTRACT` | No | Default: `claude-haiku-4-5` |
+| `ANTHROPIC_MODEL_CHAT` | No | Default: `claude-sonnet-4-6` |
 
 ---
 
@@ -138,6 +138,15 @@ middleware.ts            # Password gate
 | `Missing ANTHROPIC_API_KEY` | Set env var on Vercel / `.env.local` |
 | PDF upload fails with no text | PDF is scanned; need digital PDF or future OCR |
 | 401 on API routes | Sign in again; check `SITE_PASSWORD` |
+| Chat shows only `…` or empty reply | Redeploy after client SSE fix; check bubble for `Error:` or `(no content returned)`. Run `npm run diagnose:chat` and `npm run diagnose:chat:reproduce` (dev server must be running for the latter). |
+| Chat says "I don't know" but PDFs exist | FTS may miss your query (especially Japanese). Fallback uses recent chunks only when FTS returns zero rows. Consider Phase 2 semantic search. |
+
+**Diagnostic scripts** (with `.env.local` configured):
+
+```bash
+npm run diagnose:chat          # Supabase: doc status, chunk count, FTS hit tests
+npm run diagnose:chat:reproduce # Login + one chat call; prints outcome A–D
+```
 
 ---
 

@@ -13,6 +13,8 @@ If the answer is not in the excerpts, say you don't know and suggest uploading m
 Always cite source filenames when stating facts (e.g. "According to fedex_march.pdf...").
 Be concise and practical for inventory, shipping, and cost tracking.`;
 
+const isDev = process.env.NODE_ENV === "development";
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -32,8 +34,10 @@ export async function POST(request: Request) {
     });
 
     let chunks = await searchChunks(message, 8);
+    let usedFallback = false;
 
     if (chunks.length === 0) {
+      usedFallback = true;
       const { data: recent } = await supabase
         .from("document_chunks")
         .select(
@@ -57,28 +61,50 @@ export async function POST(request: Request) {
       });
     }
 
+    if (isDev) {
+      console.log("[chat]", {
+        messagePreview: message.slice(0, 80),
+        chunksFound: chunks.length,
+        usedFallback,
+        filenames: chunks.map((c) => c.filename),
+        model: getChatModel(),
+      });
+    }
+
     const context = formatChunksForPrompt(chunks);
     const anthropic = getAnthropicClient();
 
-    const stream = await anthropic.messages.stream({
-      model: getChatModel(),
-      max_tokens: 2048,
-      system: SYSTEM_PROMPT,
-      messages: [
-        {
-          role: "user",
-          content: `Document excerpts:\n\n${context}\n\n---\n\nQuestion: ${message}`,
-        },
-      ],
-    });
+    let stream;
+    try {
+      stream = await anthropic.messages.stream({
+        model: getChatModel(),
+        max_tokens: 2048,
+        system: SYSTEM_PROMPT,
+        messages: [
+          {
+            role: "user",
+            content: `Document excerpts:\n\n${context}\n\n---\n\nQuestion: ${message}`,
+          },
+        ],
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to start stream";
+      if (isDev) console.error("[chat] stream init failed:", msg);
+      return new Response(JSON.stringify({ error: msg }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
 
     const encoder = new TextEncoder();
     let fullAssistant = "";
 
     const readable = new ReadableStream({
       async start(controller) {
+        const eventTypes = new Set<string>();
         try {
           for await (const event of stream) {
+            eventTypes.add(event.type);
             if (
               event.type === "content_block_delta" &&
               event.delta.type === "text_delta"
@@ -89,6 +115,13 @@ export async function POST(request: Request) {
                 encoder.encode(`data: ${JSON.stringify({ text })}\n\n`),
               );
             }
+          }
+
+          if (isDev) {
+            console.log("[chat] stream complete", {
+              eventTypes: [...eventTypes],
+              responseLength: fullAssistant.length,
+            });
           }
 
           if (fullAssistant) {
@@ -102,6 +135,11 @@ export async function POST(request: Request) {
           controller.close();
         } catch (err) {
           const msg = err instanceof Error ? err.message : "Stream error";
+          if (isDev) {
+            console.error("[chat] stream iteration failed:", msg, {
+              eventTypes: [...eventTypes],
+            });
+          }
           controller.enqueue(
             encoder.encode(`data: ${JSON.stringify({ error: msg })}\n\n`),
           );
@@ -119,6 +157,7 @@ export async function POST(request: Request) {
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Chat failed";
+    if (isDev) console.error("[chat] request failed:", message);
     return new Response(JSON.stringify({ error: message }), {
       status: 500,
       headers: { "Content-Type": "application/json" },

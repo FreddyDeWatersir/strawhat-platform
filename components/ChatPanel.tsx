@@ -4,11 +4,56 @@ import { useRef, useState } from "react";
 
 type Message = { role: "user" | "assistant"; content: string };
 
+function parseSsePayload(payload: string): { text?: string; error?: string } {
+  const parsed = JSON.parse(payload) as { text?: string; error?: string };
+  if (parsed.error) {
+    throw new Error(parsed.error);
+  }
+  return parsed;
+}
+
+function processSseBuffer(
+  buffer: string,
+  onEvent: (parsed: { text?: string; error?: string }) => void,
+): string {
+  const parts = buffer.split("\n\n");
+  const remainder = parts.pop() ?? "";
+
+  for (const part of parts) {
+    const line = part
+      .split("\n")
+      .find((l) => l.startsWith("data: "));
+    if (!line) continue;
+
+    const payload = line.slice(6).trim();
+    if (!payload || payload === "[DONE]") continue;
+
+    try {
+      onEvent(parseSsePayload(payload));
+    } catch (err) {
+      if (err instanceof SyntaxError) {
+        continue;
+      }
+      throw err;
+    }
+  }
+
+  return remainder;
+}
+
 export function ChatPanel() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  function updateAssistantBubble(content: string) {
+    setMessages((m) => {
+      const copy = [...m];
+      copy[copy.length - 1] = { role: "assistant", content };
+      return copy;
+    });
+  }
 
   async function send(e: React.FormEvent) {
     e.preventDefault();
@@ -31,7 +76,9 @@ export function ChatPanel() {
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.error ?? "Chat request failed");
+        throw new Error(
+          (err as { error?: string }).error ?? "Chat request failed",
+        );
       }
 
       const reader = res.body?.getReader();
@@ -39,50 +86,35 @@ export function ChatPanel() {
 
       if (!reader) throw new Error("No response stream");
 
+      let sseBuffer = "";
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
-        const chunk = decoder.decode(value);
-        const lines = chunk.split("\n");
-
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          const payload = line.slice(6).trim();
-          if (payload === "[DONE]") continue;
-
-          try {
-            const parsed = JSON.parse(payload) as {
-              text?: string;
-              error?: string;
-            };
-            if (parsed.error) throw new Error(parsed.error);
-            if (parsed.text) {
-              assistant += parsed.text;
-              setMessages((m) => {
-                const copy = [...m];
-                copy[copy.length - 1] = {
-                  role: "assistant",
-                  content: assistant,
-                };
-                return copy;
-              });
-            }
-          } catch {
-            /* ignore partial JSON */
+        sseBuffer += decoder.decode(value, { stream: true });
+        sseBuffer = processSseBuffer(sseBuffer, (parsed) => {
+          if (parsed.text) {
+            assistant += parsed.text;
+            updateAssistantBubble(assistant);
           }
+        });
+      }
+
+      sseBuffer += decoder.decode();
+      processSseBuffer(sseBuffer ? `${sseBuffer}\n\n` : "", (parsed) => {
+        if (parsed.text) {
+          assistant += parsed.text;
+          updateAssistantBubble(assistant);
         }
+      });
+
+      if (!assistant.trim()) {
+        updateAssistantBubble("(no content returned)");
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Chat failed";
-      setMessages((m) => {
-        const copy = [...m];
-        copy[copy.length - 1] = {
-          role: "assistant",
-          content: `Error: ${msg}`,
-        };
-        return copy;
-      });
+      updateAssistantBubble(`Error: ${msg}`);
     } finally {
       setLoading(false);
       bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -107,7 +139,11 @@ export function ChatPanel() {
                 : "bg-background text-foreground"
             }`}
           >
-            <p className="whitespace-pre-wrap">{m.content || "…"}</p>
+            <p className="whitespace-pre-wrap">
+              {m.role === "assistant" && loading && i === messages.length - 1
+                ? m.content || "Thinking…"
+                : m.content || (m.role === "assistant" ? "(empty)" : "")}
+            </p>
           </div>
         ))}
         <div ref={bottomRef} />
