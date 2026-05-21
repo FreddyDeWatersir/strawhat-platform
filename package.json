@@ -16,8 +16,11 @@
     "@anthropic-ai/sdk": "^0.39.0",
     "@supabase/supabase-js": "^2.49.1",
     "next": "^15.2.4",
+    "node-html-parser": "^7.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
     "unpdf": "^0.12.1",
     "uuid": "^11.1.0",
     "voyageai": "^0.2.1"

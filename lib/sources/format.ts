@@ -12,7 +12,7 @@ export const TIER_ORDER: ProviderTier[] = [
   "marketplace",
   "proxy",
   "jp_exporter",
-  "italian_reseller",
+  "eu_reseller",
 ];
 
 export function tierLabel(tier: ProviderTier): string {
@@ -21,7 +21,7 @@ export function tierLabel(tier: ProviderTier): string {
     marketplace: "JP marketplace",
     proxy: "Proxy / deputy",
     jp_exporter: "JP English-facing exporter",
-    italian_reseller: "Italian reseller",
+    eu_reseller: "EU reseller",
   };
   return labels[tier];
 }
@@ -32,7 +32,7 @@ export function tierShort(tier: ProviderTier): string {
     marketplace: "Tier 2",
     proxy: "Tier 3",
     jp_exporter: "Tier 4",
-    italian_reseller: "Tier 5",
+    eu_reseller: "Tier 5",
   };
   return labels[tier];
 }

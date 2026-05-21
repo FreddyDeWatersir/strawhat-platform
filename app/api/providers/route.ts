@@ -6,7 +6,7 @@ const VALID_TIERS: ProviderTier[] = [
   "marketplace",
   "proxy",
   "jp_exporter",
-  "italian_reseller",
+  "eu_reseller",
 ];
 
 export async function GET() {

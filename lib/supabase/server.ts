@@ -65,7 +65,7 @@ export type ProviderTier =
   | "marketplace"
   | "proxy"
   | "jp_exporter"
-  | "italian_reseller";
+  | "eu_reseller";
 
 export type ListingProductType =
   | "box"

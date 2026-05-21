@@ -57,7 +57,7 @@ async function check(name, fn) {
   }
 }
 
-console.log("Verifying Supabase migrations (001–008)…\n");
+console.log("Verifying Supabase migrations (001–009)…\n");
 
 await check("001 documents table", async () => {
   const { error } = await supabase.from("documents").select("id").limit(1);
@@ -185,6 +185,67 @@ await check("008 Card Rush browse-only", async () => {
   if (data?.search_url_template !== null)
     throw new Error("Card Rush should have null search — run 008");
   return "product-list, search cleared";
+});
+
+await check("009 Card Rush sealed path /product-list/4", async () => {
+  const { data, error } = await supabase
+    .from("providers")
+    .select("category_url, is_active")
+    .eq("name", "Card Rush")
+    .single();
+  if (error) throw new Error(error.message);
+  if (!data?.category_url?.includes("product-list/4"))
+    throw new Error(`Card Rush category_url: ${data?.category_url} — run 009`);
+  if (data?.is_active !== true) throw new Error("Card Rush should be active — run 009");
+  return data.category_url;
+});
+
+await check("009 Surugaya deactivated", async () => {
+  const { data, error } = await supabase
+    .from("providers")
+    .select("is_active")
+    .eq("name", "Surugaya")
+    .single();
+  if (error) throw new Error(error.message);
+  if (data?.is_active !== false) throw new Error("Surugaya should be inactive — run 009");
+  return "inactive";
+});
+
+await check("009 Card Cosmos seeded", async () => {
+  const { data, error } = await supabase
+    .from("providers")
+    .select("name, tier")
+    .eq("name", "Card Cosmos")
+    .single();
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("Card Cosmos not found — run 009");
+  if (data.tier !== "eu_reseller") throw new Error(`Card Cosmos tier: ${data.tier} — run 009`);
+  return "eu_reseller";
+});
+
+await check("009 Anime Yokocho seeded", async () => {
+  const { data, error } = await supabase
+    .from("providers")
+    .select("category_url")
+    .eq("name", "Anime Yokocho")
+    .single();
+  if (error) throw new Error(error.message);
+  if (!data?.category_url?.includes("buy-for-me"))
+    throw new Error("Anime Yokocho missing buy-for-me URL — run 009");
+  return "present";
+});
+
+await check("009 TCG Corner eu_reseller", async () => {
+  const { data, error } = await supabase
+    .from("providers")
+    .select("tier, category_url")
+    .eq("name", "TCG Corner")
+    .single();
+  if (error) throw new Error(error.message);
+  if (data?.tier !== "eu_reseller") throw new Error(`TCG Corner tier: ${data?.tier} — run 009`);
+  if (!data?.category_url?.includes("one-piece-pre-order"))
+    throw new Error("TCG Corner category_url wrong — run 009");
+  return "eu_reseller + preorder URL";
 });
 
 const failed = checks.filter((c) => !c.ok);

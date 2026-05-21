@@ -1,8 +1,5 @@
-import {
-  JP_GLOSSARY,
-  SHARED_RESOURCES,
-  TIER_GUIDES,
-} from "@/lib/sources/resources";
+import { PlaybookResourcesFull } from "@/components/PlaybookResources";
+import { JP_GLOSSARY, TIER_GUIDES } from "@/lib/sources/resources";
 import { TIER_ORDER, tierShort } from "@/lib/sources/format";
 import Link from "next/link";
 
@@ -95,38 +92,26 @@ export default function CheatsheetPage() {
         </div>
       </section>
 
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold">Trusted external resources</h2>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {SHARED_RESOURCES.map((r) => (
-            <a
-              key={r.url}
-              href={r.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-xl border border-card-border bg-card p-4 transition-colors hover:border-gold"
-            >
-              <p className="font-medium text-gold">{r.title}</p>
-              <p className="mt-1 text-sm text-muted">{r.description}</p>
-              <p className="mt-2 truncate text-xs text-muted">{r.url}</p>
-            </a>
-          ))}
-        </div>
-      </section>
+      <PlaybookResourcesFull />
 
       <section className="space-y-2">
         <h2 className="text-lg font-semibold">Suggested first session</h2>
         <ol className="ml-5 list-decimal space-y-1 text-sm text-muted">
           <li>
-            On <Link href="/sources" className="text-gold hover:underline">/sources</Link>,
-            use the <span className="text-foreground">Find sealed boxes &amp; cases</span>{" "}
-            panel: pick the set, choose Case (カートン), then click 2–3 Tier 4
-            exporters to anchor your ceiling price.
+            Open <span className="text-foreground">Playbook resources → Buy now</span> on{" "}
+            <Link href="/sources" className="text-gold hover:underline">/sources</Link>{" "}
+            and compare Card Cosmos vs JumpIchiban (DDP) for one OP-16 calibration BOX.
           </li>
           <li>
-            For the same set, hit Tier 1 (Surugaya, Yuyu-tei) via their{" "}
-            <span className="text-foreground">Browse OP sealed</span> deep link and
-            note the JP price.
+            Subscribe to <span className="text-foreground">Watch</span> operators (TCG Corner,
+            Card Cosmos, Fuji) for OP-17 second-wave alerts.
+          </li>
+          <li>
+            Read{" "}
+            <Link href="/docs/supply-strategy" className="text-gold hover:underline">
+              supply strategy
+            </Link>{" "}
+            for the full proxy ladder and Anime Yokocho 店頭予約 request.
           </li>
           <li>
             Add the price on each provider as an observation (

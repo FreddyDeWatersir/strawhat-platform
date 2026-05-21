@@ -1,4 +1,5 @@
 import { HuntBySet } from "@/components/HuntBySet";
+import { PlaybookResources } from "@/components/PlaybookResources";
 import {
   groupProvidersByTier,
   latestListingsForProvider,
@@ -74,6 +75,8 @@ export default async function SourcesPage() {
           </Link>
         </div>
       </div>
+
+      <PlaybookResources />
 
       <HuntBySet providers={providers} />
 
