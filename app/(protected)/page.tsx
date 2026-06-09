@@ -5,12 +5,12 @@ import {
 } from "@/lib/cases/summary";
 import { formatMoney } from "@/lib/cases/format";
 import {
-  formatListingPrice,
   formatObservedAge,
-  statusClass,
-  statusLabel,
+  wholesaleChangeClass,
+  wholesaleChangeLabel,
+  wholesaleGameLabel,
 } from "@/lib/sources/format";
-import { recentListings } from "@/lib/sources/queries";
+import { recentWholesaleChanges } from "@/lib/sources/wholesale/queries";
 import { createServiceClient, type CaseWithBoxes } from "@/lib/supabase/server";
 import Link from "next/link";
 
@@ -29,7 +29,7 @@ export default async function DashboardPage() {
   };
   let casesPnl: ReturnType<typeof aggregateCasesByCurrency> = [];
   let casesError: string | null = null;
-  let recentSourceListings: Awaited<ReturnType<typeof recentListings>> = [];
+  let recentChanges: Awaited<ReturnType<typeof recentWholesaleChanges>> = [];
   let sourcesError: string | null = null;
   let error: string | null = null;
 
@@ -57,10 +57,10 @@ export default async function DashboardPage() {
     }
 
     try {
-      recentSourceListings = await recentListings(3);
+      recentChanges = await recentWholesaleChanges(5);
     } catch (e) {
       sourcesError =
-        e instanceof Error ? e.message : "Sources unavailable";
+        e instanceof Error ? e.message : "Wholesale watch unavailable";
     }
   } catch (e) {
     error = e instanceof Error ? e.message : "Could not load dashboard";
@@ -182,48 +182,50 @@ export default async function DashboardPage() {
 
       <div>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Latest sourcing observations</h2>
+          <h2 className="text-lg font-semibold">Latest wholesale changes</h2>
           <Link href="/sources" className="text-sm text-gold hover:underline">
-            Sources →
+            Wholesale →
           </Link>
         </div>
         {sourcesError ? (
           <p className="rounded-xl border border-card-border bg-card p-4 text-sm text-muted">
-            Sourcing directory unavailable. Run{" "}
-            <code className="text-xs">004_providers.sql</code> in Supabase.
+            Wholesale watch unavailable. Run{" "}
+            <code className="text-xs">010_wholesale_watch.sql</code> in Supabase.
           </p>
-        ) : recentSourceListings.length === 0 ? (
+        ) : recentChanges.length === 0 ? (
           <p className="rounded-xl border border-card-border bg-card p-4 text-sm text-muted">
-            No price observations yet.{" "}
+            No changes recorded yet.{" "}
             <Link href="/sources" className="text-gold hover:underline">
-              Explore sources
+              Open Wholesale
             </Link>{" "}
-            and record prices as you investigate JP retailers.
+            and click &quot;Check now&quot; to establish a baseline.
           </p>
         ) : (
           <ul className="space-y-2 rounded-xl border border-card-border bg-card p-4">
-            {recentSourceListings.map((l) => (
+            {recentChanges.map((c) => (
               <li
-                key={l.id}
+                key={c.id}
                 className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm"
               >
                 <Link
-                  href={`/sources/${l.provider_id}`}
+                  href="/sources"
                   className="font-medium text-gold hover:underline"
                 >
-                  {l.providers?.name ?? "Provider"}
+                  {c.title}
                 </Link>
-                <span>{l.set_code}</span>
-                <span className="text-muted">
-                  {formatListingPrice(l.price, l.currency)}
-                </span>
+                <span className="text-muted">{wholesaleGameLabel(c.game)}</span>
                 <span
-                  className={`rounded border px-1.5 py-0.5 text-xs ${statusClass(l.status)}`}
+                  className={`rounded border px-1.5 py-0.5 text-xs ${wholesaleChangeClass(c.change_type)}`}
                 >
-                  {statusLabel(l.status)}
+                  {wholesaleChangeLabel(c.change_type)}
                 </span>
+                {(c.old_value || c.new_value) && (
+                  <span className="text-xs text-muted">
+                    {c.old_value ?? "—"} → {c.new_value ?? "—"}
+                  </span>
+                )}
                 <span className="text-xs text-muted">
-                  {formatObservedAge(l.observed_at)}
+                  {formatObservedAge(c.detected_at)}
                 </span>
               </li>
             ))}

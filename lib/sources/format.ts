@@ -97,3 +97,51 @@ export function formatObservedAge(observedAt: string): string {
   if (days === 1) return "1 day ago";
   return `${days} days ago`;
 }
+
+export function wholesaleGameLabel(game: "one_piece" | "pokemon"): string {
+  return game === "one_piece" ? "One Piece" : "Pokemon";
+}
+
+export function wholesaleChangeLabel(
+  type:
+    | "new"
+    | "restock"
+    | "sold_out"
+    | "price_up"
+    | "price_down",
+): string {
+  const labels = {
+    new: "New",
+    restock: "Restock",
+    sold_out: "Sold out",
+    price_up: "Price up",
+    price_down: "Price down",
+  } as const;
+  return labels[type];
+}
+
+export function wholesaleChangeClass(
+  type:
+    | "new"
+    | "restock"
+    | "sold_out"
+    | "price_up"
+    | "price_down",
+): string {
+  const classes = {
+    new: "bg-blue-950/60 text-blue-300 border-blue-800",
+    restock: "bg-emerald-950/60 text-emerald-300 border-emerald-800",
+    sold_out: "bg-red-950/60 text-red-300 border-red-800",
+    price_up: "bg-amber-950/60 text-amber-300 border-amber-800",
+    price_down: "bg-violet-950/60 text-violet-300 border-violet-800",
+  } as const;
+  return classes[type];
+}
+
+export function formatAudPrice(price: number | null): string {
+  if (price == null) return "—";
+  return `$${price.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })} AUD`;
+}
