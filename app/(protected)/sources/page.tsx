@@ -6,6 +6,10 @@ import {
   wholesaleChangeLabel,
   wholesaleGameLabel,
 } from "@/lib/sources/format";
+import type {
+  WholesaleGame,
+  WholesaleListingRow,
+} from "@/lib/sources/scrapers/types";
 import {
   latestWholesaleListings,
   recentWholesaleChanges,
@@ -13,9 +17,22 @@ import {
 
 export const dynamic = "force-dynamic";
 
+const GAME_ORDER: WholesaleGame[] = ["one_piece", "pokemon", "dragon_ball"];
+
+function isSingle(category: string | null): boolean {
+  return !!category && /single/i.test(category);
+}
+
+function sortListings(rows: WholesaleListingRow[]): WholesaleListingRow[] {
+  return [...rows].sort((a, b) => {
+    if (a.available !== b.available) return a.available ? -1 : 1;
+    return a.title.localeCompare(b.title);
+  });
+}
+
 export default async function SourcesPage() {
   let error: string | null = null;
-  let listings: Awaited<ReturnType<typeof latestWholesaleListings>> = [];
+  let listings: WholesaleListingRow[] = [];
   let changes: Awaited<ReturnType<typeof recentWholesaleChanges>> = [];
 
   try {
@@ -28,15 +45,20 @@ export default async function SourcesPage() {
   const inStock = listings.filter((l) => l.available);
   const outOfStock = listings.filter((l) => !l.available);
 
+  const byGame = new Map<WholesaleGame, WholesaleListingRow[]>();
+  for (const listing of listings) {
+    const arr = byGame.get(listing.game) ?? [];
+    arr.push(listing);
+    byGame.set(listing.game, arr);
+  }
+
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-gold">
-            TCG Wholesale HQ
-          </h1>
+          <h1 className="text-2xl font-semibold text-gold">TCG Wholesale HQ</h1>
           <p className="text-sm text-muted">
-            One Piece + Pokemon catalogue from{" "}
+            One Piece, Pokemon &amp; Dragon Ball catalogue from{" "}
             <a
               href="https://tcgwholesalehq.com/pages/tcg-wholesale-catalogue"
               target="_blank"
@@ -54,8 +76,10 @@ export default async function SourcesPage() {
 
       {error && (
         <p className="rounded-lg border border-red-800 bg-red-950/40 p-4 text-sm text-red-300">
-          {error}. Run migration{" "}
-          <code className="text-xs">010_wholesale_watch.sql</code> in Supabase.
+          {error}. Run migrations{" "}
+          <code className="text-xs">010_wholesale_watch.sql</code> and{" "}
+          <code className="text-xs">011_wholesale_dragon_ball.sql</code> in
+          Supabase.
         </p>
       )}
 
@@ -127,89 +151,121 @@ export default async function SourcesPage() {
         )}
       </section>
 
-      <section>
+      <section className="space-y-6">
         <h2 className="text-lg font-semibold">Current catalogue</h2>
         {listings.length === 0 ? (
-          <p className="mt-3 rounded-xl border border-card-border bg-card p-6 text-sm text-muted">
+          <p className="rounded-xl border border-card-border bg-card p-6 text-sm text-muted">
             No snapshots yet. Run a check to populate the catalogue.
           </p>
         ) : (
-          <div className="mt-3 overflow-x-auto rounded-xl border border-card-border bg-card">
-            <table className="w-full min-w-[720px] text-left text-sm">
-              <thead>
-                <tr className="border-b border-card-border text-muted">
-                  <th className="px-4 py-3 font-medium">Product</th>
-                  <th className="px-4 py-3 font-medium">Game</th>
-                  <th className="px-4 py-3 font-medium">Category</th>
-                  <th className="px-4 py-3 font-medium">Price</th>
-                  <th className="px-4 py-3 font-medium">Stock</th>
-                  <th className="px-4 py-3 font-medium">Updated</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[...listings]
-                  .sort((a, b) => {
-                    if (a.available !== b.available) {
-                      return a.available ? -1 : 1;
-                    }
-                    return a.title.localeCompare(b.title);
-                  })
-                  .map((listing) => (
-                    <tr
-                      key={listing.variant_id}
-                      className="border-b border-card-border/60"
-                    >
-                      <td className="px-4 py-3">
-                        {listing.source_url ? (
-                          <a
-                            href={listing.source_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="font-medium text-gold hover:underline"
-                          >
-                            {listing.title}
-                          </a>
-                        ) : (
-                          <span className="font-medium">{listing.title}</span>
-                        )}
-                        {listing.sku && (
-                          <span className="mt-0.5 block text-xs text-muted">
-                            SKU: {listing.sku}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-muted">
-                        {wholesaleGameLabel(listing.game)}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-muted">
-                        {listing.category ?? "—"}
-                      </td>
-                      <td className="px-4 py-3 font-medium">
-                        {formatAudPrice(
-                          listing.price == null ? null : Number(listing.price),
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`rounded border px-2 py-0.5 text-xs ${
-                            listing.available
-                              ? "border-emerald-800 bg-emerald-950/60 text-emerald-300"
-                              : "border-red-800 bg-red-950/60 text-red-300"
-                          }`}
-                        >
-                          {listing.available ? "In stock" : "Sold out"}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-xs text-muted">
-                        {formatObservedAge(listing.observed_at)}
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
+          GAME_ORDER.filter((game) => byGame.has(game)).map((game) => {
+            const rows = byGame.get(game) ?? [];
+            const gameInStock = rows.filter((r) => r.available).length;
+            const sealed = sortListings(rows.filter((r) => !isSingle(r.category)));
+            const singles = sortListings(rows.filter((r) => isSingle(r.category)));
+
+            return (
+              <div key={game} className="space-y-4">
+                <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-card-border pb-2">
+                  <h3 className="text-base font-semibold text-gold">
+                    {wholesaleGameLabel(game)}
+                  </h3>
+                  <span className="text-xs text-muted">
+                    <span className="text-emerald-300">{gameInStock} in stock</span>{" "}
+                    · {rows.length} tracked
+                  </span>
+                </div>
+
+                {sealed.length > 0 && (
+                  <CatalogueTable label="Sealed boxes & sets" rows={sealed} />
+                )}
+                {singles.length > 0 && (
+                  <CatalogueTable label="Singles" rows={singles} />
+                )}
+              </div>
+            );
+          })
         )}
       </section>
+    </div>
+  );
+}
+
+function CatalogueTable({
+  label,
+  rows,
+}: {
+  label: string;
+  rows: WholesaleListingRow[];
+}) {
+  return (
+    <div>
+      <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">
+        {label} ({rows.length})
+      </p>
+      <div className="overflow-x-auto rounded-xl border border-card-border bg-card">
+        <table className="w-full min-w-[640px] text-left text-sm">
+          <thead>
+            <tr className="border-b border-card-border text-muted">
+              <th className="px-4 py-3 font-medium">Product</th>
+              <th className="px-4 py-3 font-medium">Category</th>
+              <th className="px-4 py-3 font-medium">Price</th>
+              <th className="px-4 py-3 font-medium">Stock</th>
+              <th className="px-4 py-3 font-medium">Updated</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((listing) => (
+              <tr
+                key={listing.variant_id}
+                className="border-b border-card-border/60"
+              >
+                <td className="px-4 py-3">
+                  {listing.source_url ? (
+                    <a
+                      href={listing.source_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium text-gold hover:underline"
+                    >
+                      {listing.title}
+                    </a>
+                  ) : (
+                    <span className="font-medium">{listing.title}</span>
+                  )}
+                  {listing.sku && (
+                    <span className="mt-0.5 block text-xs text-muted">
+                      SKU: {listing.sku}
+                    </span>
+                  )}
+                </td>
+                <td className="px-4 py-3 text-xs text-muted">
+                  {listing.category ?? "—"}
+                </td>
+                <td className="px-4 py-3 font-medium">
+                  {formatAudPrice(
+                    listing.price == null ? null : Number(listing.price),
+                  )}
+                </td>
+                <td className="px-4 py-3">
+                  <span
+                    className={`rounded border px-2 py-0.5 text-xs ${
+                      listing.available
+                        ? "border-emerald-800 bg-emerald-950/60 text-emerald-300"
+                        : "border-red-800 bg-red-950/60 text-red-300"
+                    }`}
+                  >
+                    {listing.available ? "In stock" : "Sold out"}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-xs text-muted">
+                  {formatObservedAge(listing.observed_at)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

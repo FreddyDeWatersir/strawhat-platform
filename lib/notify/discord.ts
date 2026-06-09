@@ -30,7 +30,12 @@ function changeLabel(type: WholesaleChangeRow["change_type"]): string {
 }
 
 function gameLabel(game: WholesaleChangeRow["game"]): string {
-  return game === "one_piece" ? "One Piece" : "Pokemon";
+  const labels = {
+    one_piece: "One Piece",
+    pokemon: "Pokemon",
+    dragon_ball: "Dragon Ball",
+  } as const;
+  return labels[game];
 }
 
 function formatChangeEmbed(change: WholesaleChangeRow) {

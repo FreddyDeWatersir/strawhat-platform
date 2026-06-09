@@ -5,7 +5,7 @@ import type {
 
 export const TCG_WHOLESALE_BASE = "https://tcgwholesalehq.com";
 
-/** One Piece + Pokemon collection handles to monitor. */
+/** One Piece + Pokemon + Dragon Ball collection handles to monitor. */
 export const WHOLESALE_COLLECTIONS: {
   handle: string;
   game: WholesaleGame;
@@ -41,6 +41,11 @@ export const WHOLESALE_COLLECTIONS: {
     handle: "pokemon-singles",
     game: "pokemon",
     category: "Pokemon Singles",
+  },
+  {
+    handle: "dragon-ball-tcg",
+    game: "dragon_ball",
+    category: "Dragon Ball TCG",
   },
 ];
 
@@ -165,21 +170,25 @@ async function fetchCollectionProducts(
   return all;
 }
 
-/** Fetch all monitored OP + Pokemon variants from Shopify collections. */
+/** Fetch all monitored variants from Shopify collections (fetched in parallel). */
 export async function fetchWholesaleCatalogue(): Promise<
   WholesaleScrapeRecord[]
 > {
   const byVariantId = new Map<number, WholesaleScrapeRecord>();
 
-  for (const collection of WHOLESALE_COLLECTIONS) {
-    const products = await fetchCollectionProducts(collection.handle);
-    const parsed = parseShopifyProducts(
-      products,
-      collection.game,
-      collection.category,
-    );
+  const perCollection = await Promise.all(
+    WHOLESALE_COLLECTIONS.map(async (collection) => {
+      const products = await fetchCollectionProducts(collection.handle);
+      return parseShopifyProducts(
+        products,
+        collection.game,
+        collection.category,
+      );
+    }),
+  );
 
-    for (const record of parsed) {
+  for (const records of perCollection) {
+    for (const record of records) {
       byVariantId.set(record.variant_id, record);
     }
   }

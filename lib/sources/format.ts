@@ -98,8 +98,15 @@ export function formatObservedAge(observedAt: string): string {
   return `${days} days ago`;
 }
 
-export function wholesaleGameLabel(game: "one_piece" | "pokemon"): string {
-  return game === "one_piece" ? "One Piece" : "Pokemon";
+export function wholesaleGameLabel(
+  game: "one_piece" | "pokemon" | "dragon_ball",
+): string {
+  const labels = {
+    one_piece: "One Piece",
+    pokemon: "Pokemon",
+    dragon_ball: "Dragon Ball",
+  } as const;
+  return labels[game];
 }
 
 export function wholesaleChangeLabel(

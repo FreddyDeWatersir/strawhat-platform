@@ -31,7 +31,7 @@ export type RefreshSummary = {
 };
 
 /** Shopify variant record from tcgwholesalehq.com */
-export type WholesaleGame = "one_piece" | "pokemon";
+export type WholesaleGame = "one_piece" | "pokemon" | "dragon_ball";
 
 export type WholesaleScrapeRecord = {
   variant_id: number;
