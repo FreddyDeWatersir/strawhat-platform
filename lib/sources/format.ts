@@ -152,3 +152,16 @@ export function formatAudPrice(price: number | null): string {
     maximumFractionDigits: 2,
   })} AUD`;
 }
+
+/** EUR equivalent of an AUD price, e.g. "≈ €88.10". Empty string if no price. */
+export function formatEurFromAud(
+  audPrice: number | null,
+  audToEur: number,
+): string {
+  if (audPrice == null) return "";
+  const eur = audPrice * audToEur;
+  return `≈ €${eur.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}

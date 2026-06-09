@@ -1,6 +1,8 @@
 import { RefreshWholesaleButton } from "@/components/RefreshWholesaleButton";
+import { getAudToEurRate } from "@/lib/fx/rate";
 import {
   formatAudPrice,
+  formatEurFromAud,
   formatObservedAge,
   wholesaleChangeClass,
   wholesaleChangeLabel,
@@ -10,6 +12,10 @@ import type {
   WholesaleGame,
   WholesaleListingRow,
 } from "@/lib/sources/scrapers/types";
+import {
+  cardmarketUrlForListing,
+  loadCardmarketLinks,
+} from "@/lib/sources/wholesale/cardmarket";
 import {
   latestWholesaleListings,
   recentWholesaleChanges,
@@ -42,6 +48,9 @@ export default async function SourcesPage() {
     error = e instanceof Error ? e.message : "Could not load wholesale data";
   }
 
+  const fx = await getAudToEurRate();
+  const cardmarketLinks = await loadCardmarketLinks();
+
   const inStock = listings.filter((l) => l.available);
   const outOfStock = listings.filter((l) => !l.available);
 
@@ -58,7 +67,7 @@ export default async function SourcesPage() {
         <div>
           <h1 className="text-2xl font-semibold text-gold">TCG Wholesale HQ</h1>
           <p className="text-sm text-muted">
-            One Piece, Pokemon &amp; Dragon Ball catalogue from{" "}
+            One Piece, Pokemon &amp; Dragon Ball from{" "}
             <a
               href="https://tcgwholesalehq.com/pages/tcg-wholesale-catalogue"
               target="_blank"
@@ -67,8 +76,9 @@ export default async function SourcesPage() {
             >
               tcgwholesalehq.com
             </a>
-            . Tracks restocks, sold-outs, and price changes. Daily cron + manual
-            check. Discord alerts when configured.
+            . AUD prices with EUR reference. One Piece sealed boxes link to
+            Cardmarket IT for manual price comparison. Daily cron + Discord when
+            configured.
           </p>
         </div>
         <RefreshWholesaleButton />
@@ -152,7 +162,15 @@ export default async function SourcesPage() {
       </section>
 
       <section className="space-y-6">
-        <h2 className="text-lg font-semibold">Current catalogue</h2>
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-lg font-semibold">Current catalogue</h2>
+          <p className="text-xs text-muted">
+            EUR shown for reference · 1 AUD ≈ €{fx.rate.toFixed(3)}{" "}
+            {fx.live
+              ? `(ECB${fx.date ? ` ${fx.date}` : ""})`
+              : "(approx — live rate unavailable)"}
+          </p>
+        </div>
         {listings.length === 0 ? (
           <p className="rounded-xl border border-card-border bg-card p-6 text-sm text-muted">
             No snapshots yet. Run a check to populate the catalogue.
@@ -177,10 +195,21 @@ export default async function SourcesPage() {
                 </div>
 
                 {sealed.length > 0 && (
-                  <CatalogueTable label="Sealed boxes & sets" rows={sealed} />
+                  <CatalogueTable
+                    label="Sealed boxes & sets"
+                    rows={sealed}
+                    audToEur={fx.rate}
+                    cardmarketLinks={
+                      game === "one_piece" ? cardmarketLinks : undefined
+                    }
+                  />
                 )}
                 {singles.length > 0 && (
-                  <CatalogueTable label="Singles" rows={singles} />
+                  <CatalogueTable
+                    label="Singles"
+                    rows={singles}
+                    audToEur={fx.rate}
+                  />
                 )}
               </div>
             );
@@ -194,9 +223,13 @@ export default async function SourcesPage() {
 function CatalogueTable({
   label,
   rows,
+  audToEur,
+  cardmarketLinks,
 }: {
   label: string;
   rows: WholesaleListingRow[];
+  audToEur: number;
+  cardmarketLinks?: Awaited<ReturnType<typeof loadCardmarketLinks>>;
 }) {
   return (
     <div>
@@ -210,12 +243,20 @@ function CatalogueTable({
               <th className="px-4 py-3 font-medium">Product</th>
               <th className="px-4 py-3 font-medium">Category</th>
               <th className="px-4 py-3 font-medium">Price</th>
+              {cardmarketLinks && (
+                <th className="px-4 py-3 font-medium">Cardmarket</th>
+              )}
               <th className="px-4 py-3 font-medium">Stock</th>
               <th className="px-4 py-3 font-medium">Updated</th>
             </tr>
           </thead>
           <tbody>
-            {rows.map((listing) => (
+            {rows.map((listing) => {
+              const cardmarketUrl = cardmarketLinks
+                ? cardmarketUrlForListing(listing, cardmarketLinks)
+                : null;
+
+              return (
               <tr
                 key={listing.variant_id}
                 className="border-b border-card-border/60"
@@ -242,11 +283,35 @@ function CatalogueTable({
                 <td className="px-4 py-3 text-xs text-muted">
                   {listing.category ?? "—"}
                 </td>
-                <td className="px-4 py-3 font-medium">
-                  {formatAudPrice(
-                    listing.price == null ? null : Number(listing.price),
+                <td className="px-4 py-3">
+                  <span className="font-medium">
+                    {formatAudPrice(
+                      listing.price == null ? null : Number(listing.price),
+                    )}
+                  </span>
+                  {listing.price != null && (
+                    <span className="mt-0.5 block text-xs text-muted">
+                      {formatEurFromAud(Number(listing.price), audToEur)}
+                    </span>
                   )}
                 </td>
+                {cardmarketLinks && (
+                  <td className="px-4 py-3">
+                    {cardmarketUrl ? (
+                      <a
+                        href={cardmarketUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-gold hover:underline"
+                        title="Open Cardmarket IT — check trend vs your EUR hint"
+                      >
+                        Compare →
+                      </a>
+                    ) : (
+                      <span className="text-xs text-muted">—</span>
+                    )}
+                  </td>
+                )}
                 <td className="px-4 py-3">
                   <span
                     className={`rounded border px-2 py-0.5 text-xs ${
@@ -262,7 +327,8 @@ function CatalogueTable({
                   {formatObservedAge(listing.observed_at)}
                 </td>
               </tr>
-            ))}
+            );
+            })}
           </tbody>
         </table>
       </div>
